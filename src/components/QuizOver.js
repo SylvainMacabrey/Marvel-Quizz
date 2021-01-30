@@ -1,15 +1,39 @@
 import React, { Fragment, useEffect, useState } from 'react'
 import { GiTrophyCup } from 'react-icons/gi'
+import Loader from './Loader'
+import Modal from './Modal'
+import axios from 'axios'
 
 const QuizOver = React.forwardRef((props, ref) => {
 
     const { levelNames, quizLevel, score, maxQuestions, percent, loadLevelQuestions } = props
 
     const [asked, setAsked] = useState([])
+    const [openModal, setOpenModal] = useState(false)
+    const [characterData, setChracterData] = useState([])
+    const [loading, setLoading] = useState(true)
+
+    const API_PUBLIC_KEY = process.env.REACT_APP_MARVEL_API_KEY
+    const hash = 'a51cd318611852ed3f914062aec34cc0'
 
     useEffect(() => {
         setAsked(ref.current)
     }, [ref])
+
+    const showModal = (id) => {
+        setOpenModal(true)
+        axios.get(`https://gateway.marvel.com/v1/public/characters/${id}?ts=1&apikey=${API_PUBLIC_KEY}&hash=${hash}`)
+        .then(response => {
+            setChracterData(response.data)
+            setLoading(false)
+        })
+        .catch(error => console.log(error))
+    }
+
+    const hideModal = () => {
+        setOpenModal(false)
+        setLoading(true)
+    }
 
     if(score < maxQuestions / 2) {
         setTimeout(() => loadLevelQuestions(quizLevel), 3000)
@@ -55,19 +79,39 @@ const QuizOver = React.forwardRef((props, ref) => {
                 <tr key={a.id}>
                     <td>{ a.question }</td>
                     <td>{ a.answer }</td>
-                    <td><button className="btnInfo">Infos</button></td>
+                    <td><button className="btnInfo" onClick={ () => showModal(a.heroId) }>Infos</button></td>
                 </tr>
             )
         })
     ) : (
         <tr>
             <td colSpan="3">
-                <div className="loader"></div>
-                <p style={{ textAlign: 'center', color: 'red' }}>
-                    Recommencer le niveau
-                </p>
+                <Loader msg={ "Recommencer le niveau" } style={{ textAlign: 'center', color: 'red' }}/>
             </td>
         </tr>
+    )
+
+    const resultModal = !loading ? (
+        <Fragment>
+            <div className="modalHeader">
+                <h2>{ characterData.data.results[0].name }</h2>
+            </div>
+            <div className="modalBody">
+                <h3>Sous titre</h3>
+            </div>
+            <div className="modalFooter">
+                <button className="modalBtn">Fermer</button>
+            </div>
+        </Fragment>
+    ) : (
+        <Fragment>
+            <div className="modalHeader">
+                <h2>Réponse de Marvel API</h2>
+            </div>
+            <div className="modalBody">
+                <Loader msg={ "En attente ... " } style={{ textAlign: 'center', color: 'red' }} />
+            </div>
+        </Fragment>
     )
 
     return (
@@ -89,6 +133,9 @@ const QuizOver = React.forwardRef((props, ref) => {
                     </tbody>
                 </table>
             </div>
+            <Modal openModal={ openModal } hideModal={ hideModal }>
+                { resultModal }
+            </Modal>
         </Fragment>
     )
 
