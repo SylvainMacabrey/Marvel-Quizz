@@ -3,12 +3,12 @@ import 'firebase/auth'
 import 'firebase/firestore'
 
 const config = {
-    apiKey: "AIzaSyCDFOskGihRPO0uEjo1pt0yyXEqfYY_8ag",
-    authDomain: "marvel-quiz-dd9eb.firebaseapp.com",
-    projectId: "marvel-quiz-dd9eb",
-    storageBucket: "marvel-quiz-dd9eb.appspot.com",
-    messagingSenderId: "645365287987",
-    appId: "1:645365287987:web:cdbe826c80108e9a6e2746"
+    apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+    authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.REACT_APP_FIREBASE_APP_ID
   };
 
 class Firebase {
