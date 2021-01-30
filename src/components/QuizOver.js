@@ -18,16 +18,39 @@ const QuizOver = React.forwardRef((props, ref) => {
 
     useEffect(() => {
         setAsked(ref.current)
+        if(localStorage.getItem('marvelStorageDate')) {
+            checkDataAge(localStorage.getItem('marvelStorageDate'))
+        }
     }, [ref])
+
+    const checkDataAge = (date) => {
+        const today = Date.now()
+        const timeDifference = today - date
+        const dayDifference = timeDifference / 1000 * 3600 * 24
+        if(dayDifference >= 1) {
+            localStorage.clear()
+            localStorage.setItem('marvelStorageDate', Date.now())
+        }
+    }
 
     const showModal = (id) => {
         setOpenModal(true)
-        axios.get(`https://gateway.marvel.com/v1/public/characters/${id}?ts=1&apikey=${API_PUBLIC_KEY}&hash=${hash}`)
-        .then(response => {
-            setChracterData(response.data)
+        if(localStorage.getItem(id)) {
+            setChracterData(JSON.parse(localStorage.getItem(id)))
             setLoading(false)
-        })
-        .catch(error => console.log(error))
+        } else {
+            axios.get(`https://gateway.marvel.com/v1/public/characters/${id}?ts=1&apikey=${API_PUBLIC_KEY}&hash=${hash}`)
+            .then(response => {
+                setChracterData(response.data)
+                setLoading(false)
+                //stockage local
+                localStorage.setItem(id, JSON.stringify(response.data))
+                if(!localStorage.getItem('marvelStorageDate')) {
+                    localStorage.setItem('marvelStorageDate', Date.now())
+                }
+            })
+            .catch(error => console.log(error))
+        }
     }
 
     const hideModal = () => {
@@ -91,16 +114,37 @@ const QuizOver = React.forwardRef((props, ref) => {
         </tr>
     )
 
+    const capitalizeFirestletter = (string) => {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+
     const resultModal = !loading ? (
         <Fragment>
             <div className="modalHeader">
                 <h2>{ characterData.data.results[0].name }</h2>
             </div>
             <div className="modalBody">
-                <h3>Sous titre</h3>
+                <div className="comicImage">
+                        <img 
+                            src={ characterData.data.results[0].thumbnail.path+'.'+characterData.data.results[0].thumbnail.extension } 
+                            alt={ characterData.data.results[0].name }
+                        />
+                        <p>{ characterData.attributionText }</p>
+                </div>
+                <div className="comicDetails">
+                    <h3>Description</h3>
+                    { characterData.data.results[0].description ? <p>{ characterData.data.results[0].description }</p> : <p>Description indisponible ...</p> }
+                    <h3>Plus d'infos</h3>
+                    { characterData.data.results[0].urls && characterData.data.results[0].urls.map( (url, index) => {
+                            return <a  key={ index } href={ url.url } target="_blank" rel="noopener noreferrer" >
+                              { capitalizeFirestletter(url.type) }
+                            </a>
+                        })
+                    }
+               </div>
             </div>
             <div className="modalFooter">
-                <button className="modalBtn">Fermer</button>
+                <button className="modalBtn" onClick={ hideModal }>Fermer</button>
             </div>
         </Fragment>
     ) : (
@@ -133,7 +177,7 @@ const QuizOver = React.forwardRef((props, ref) => {
                     </tbody>
                 </table>
             </div>
-            <Modal openModal={ openModal } hideModal={ hideModal }>
+            <Modal openModal={ openModal }>
                 { resultModal }
             </Modal>
         </Fragment>
